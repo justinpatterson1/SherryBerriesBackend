@@ -1,0 +1,30 @@
+const express = require("express");
+const mongoose = require ("mongoose");
+
+const jewelryController = require('./controller/jewelryController.js')
+
+if(process.env.NODE_ENV!="production")
+{
+    require("dotenv").config({path:"config/Keys.env"})
+}
+
+
+
+ app = express();
+
+ app.use(express.json())
+
+
+
+const PORT = process.env.PORT;
+
+app.use("/jewelry",jewelryController )
+
+app.listen(PORT,()=>{
+    mongoose.connect(process.env.MONGODB,{useNewUrlParser: true, useUnifiedTopology: true})
+    .then(()=>{
+        console.log("Mongoose is connected")
+    })
+    .catch(err => console.log(err))
+    console.log(`Example app listening on port ${PORT}`)
+})

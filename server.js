@@ -1,7 +1,8 @@
 const express = require("express");
 const mongoose = require ("mongoose");
 
-const jewelryController = require('./controller/jewelryController.js')
+const jewelryController = require('./controller/jewelryController.js');
+const userController = require('./controller/userController.js')
 
 if(process.env.NODE_ENV!="production")
 {
@@ -18,7 +19,8 @@ if(process.env.NODE_ENV!="production")
 
 const PORT = process.env.PORT;
 
-app.use("/jewelry",jewelryController )
+app.use("/jewelry",jewelryController );
+app.use("/user", userController)
 
 app.listen(PORT,()=>{
     mongoose.connect(process.env.MONGODB,{useNewUrlParser: true, useUnifiedTopology: true})

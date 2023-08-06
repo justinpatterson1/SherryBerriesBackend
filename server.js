@@ -1,5 +1,6 @@
 const express = require("express");
 const mongoose = require ("mongoose");
+const fileUpload = require("express-fileupload")
 
 const jewelryController = require('./controller/jewelryController.js');
 const userController = require('./controller/userController.js')
@@ -14,6 +15,8 @@ if(process.env.NODE_ENV!="production")
  app = express();
 
  app.use(express.json())
+
+ app.use(fileUpload())
 
 
 

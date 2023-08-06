@@ -1,5 +1,5 @@
 const jewelryModel = require('../model/jewelryModel.js')
-
+const { v4: uuidv4 } = require('uuid');
 
 exports.getAllJewelry=(req,res)=>{
     jewelryModel.find()
@@ -41,22 +41,56 @@ exports.getAJewelry = (req,res) =>{
 
 exports.addNewJewelry = (req,res) =>{
     
+    const AWS = require('aws-sdk');
+
+    const s3 = new AWS.S3({
+        accessKeyId:process.env.AWSACCESSKEYID,
+        secretAccessKey:process.env.AWSSECRETACESSKEY
+    })
+
     const newJewelryProduct = new jewelryModel(req.body)
 
     newJewelryProduct.save()
-        .then((jewelry) => {
-            res.json({
-                message:'New item has been created',
-                data:jewelry
+    .then((jewelry)=>{
+        const fileName = `${uuidv4}_${req.files.img.name}`
+
+        const params = {
+                Bucket: process.env.BUCKET_NAME,
+                Key: fileName,
+                Body:req.files.img.data
+        }
+
+        console.log(fileName)
+        s3.upload(params,function(err, data) {
+            if (err) {
+                throw err;
+            }
+
+            
+
+                newJewelryProduct.img = data.location 
+                newJewelryProduct.save()
+                     .then((jewelry) => {
+                        res.json({
+                            message:'New item has been created',
+                            data:jewelry
+                        })
+                        console.log(req.body)
+                    })
+               
+
+        
+                });
+})
+            
+            .catch(err =>{
+                res.status(500).json({
+                    message:'product was not uploaded',
+                    err:err
+                })
             })
-            console.log(req.body)
-        })
-        .catch(err=>{
-            res.status(500).json({
-             message:'Movie was not created',
-             error:err
-            }) 
-         })
+        
+       
 }
 
 exports.deleteOneJewelry = (req,res) =>{

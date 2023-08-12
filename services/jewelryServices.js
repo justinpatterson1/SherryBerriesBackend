@@ -1,5 +1,9 @@
 const jewelryModel = require('../model/jewelryModel.js')
 const { v4: uuidv4 } = require('uuid');
+const multer = require('multer')
+const multerS3 = require('multer-s3')
+const{s3Client} = require("../libs/s3Client.js")
+const  {S3Client , PutObjectCommand} = require( "@aws-sdk/client-s3");
 
 exports.getAllJewelry=(req,res)=>{
     jewelryModel.find()
@@ -41,34 +45,40 @@ exports.getAJewelry = (req,res) =>{
 
 exports.addNewJewelry = (req,res) =>{
     
-    const AWS = require('aws-sdk');
-
-    const s3 = new AWS.S3({
-        accessKeyId:process.env.AWSACCESSKEYID,
-        secretAccessKey:process.env.AWSSECRETACESSKEY
+    const s3Client = new S3Client({
+        region: process.env.REGION ,
+        credentials:{
+           accessKeyId:process.env.AWSACCESSKEYID,
+           secretAccessKey:process.env.AWSSECRETACESSKEY
+        }
     })
 
     const newJewelryProduct = new jewelryModel(req.body)
 
     newJewelryProduct.save()
     .then((jewelry)=>{
-        const fileName = `${uuidv4}_${req.files.img.name}`
+        const fileName = `${uuidv4()}_${req.files.img.name}`
 
+        
         const params = {
                 Bucket: process.env.BUCKET_NAME,
                 Key: fileName,
                 Body:req.files.img.data
         }
 
-        console.log(fileName)
-        s3.upload(params,function(err, data) {
+      // console.log(fileName)
+
+      
+        s3Client.send(new PutObjectCommand(params),function(err, data) {
             if (err) {
+                console.log(err)
                 throw err;
+                
             }
 
-            
+            console.log(params.Key)
 
-                newJewelryProduct.img = data.location 
+                newJewelryProduct.img = process.env.REPO+params.Key
                 newJewelryProduct.save()
                      .then((jewelry) => {
                         res.json({
@@ -88,10 +98,13 @@ exports.addNewJewelry = (req,res) =>{
                     message:'product was not uploaded',
                     err:err
                 })
-            })
+         })
         
        
 }
+
+
+
 
 exports.deleteOneJewelry = (req,res) =>{
     jewelryModel.findByIdAndDelete({_id:req.params.id})
@@ -124,3 +137,4 @@ exports.updateOneJewelry = (req,res) =>{
             })
         })
 }
+

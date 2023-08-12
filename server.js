@@ -1,6 +1,8 @@
 const express = require("express");
 const mongoose = require ("mongoose");
 const fileUpload = require("express-fileupload")
+const cors = require("cors")
+
 
 const jewelryController = require('./controller/jewelryController.js');
 const userController = require('./controller/userController.js')
@@ -19,7 +21,9 @@ if(process.env.NODE_ENV!="production")
  app.use(fileUpload())
 
 
-
+ app.use(cors({
+    origin:process.env.FRONT_END
+}))
 const PORT = process.env.PORT;
 
 app.use("/jewelry",jewelryController );

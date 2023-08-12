@@ -122,8 +122,8 @@ exports.loginUser = (req,res) =>{
                         if(authorisedUser==true){
                             const token = jwt.sign({
                                 _id: user._id,
-                                firstName:user.firstName,
-                                lastName:user.lastName,
+                                firstName:user.firstname,
+                                lastName:user.lastname,
                                 email:user.email ,
                                 level:user.level
                             },process.env.JWT_TOKEN)

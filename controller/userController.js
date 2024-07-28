@@ -1,13 +1,18 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router()
-const userServices = require('../services/userServices.js');
-const { model } = require('mongoose');
+import {loginUpdate,loginUser,updateUserCart,getUserCart,deleteAUser,updateAUser,createAuser,getAUser,getAllUsers} from '../services/userServices.js'
+import {checkSchema} from 'express-validator'
+import { userValidation } from '../validators/UserValidation.js';
+import { model } from 'mongoose';
 
-router.get("/",userServices.getAllUsers);
-router.get("/:id",userServices.getAUser);
-router.post("/",userServices.createAuser);
-router.put("/:id",userServices.updateAUser);
-router.delete("/:id",userServices.deleteAUser);
-router.post("/auth",userServices.loginUser)
+router.get("/",getAllUsers);
+router.get("/cart/:id",getUserCart)
+router.get("/:id",getAUser);
+router.post("/",checkSchema(userValidation),createAuser);
+router.put("/:id",updateAUser);
+router.delete("/:id",deleteAUser);
+router.post("/auth",loginUser)
+router.post("/update/:id",loginUpdate)
+router.put("/:id/:cartid",updateUserCart)
 
-module.exports = router;
+export default router;

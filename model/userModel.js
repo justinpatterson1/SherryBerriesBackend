@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 const {Schema} = mongoose
 
 const userSchema = new Schema({
@@ -19,9 +19,20 @@ password:{
     type:String,
     require:true
   
-}
-
+},
+cart:[
+    {
+       
+       name:String,
+       price:Number,
+       img:[{type:String}],
+       quantity:{type:Number,Default:1},
+       order:String
+       
+       
+    }
+  ],
 })
 
 const userModel = mongoose.model("users",userSchema);
-module.exports = userModel;
+export default userModel;

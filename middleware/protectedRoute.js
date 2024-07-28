@@ -7,7 +7,7 @@ exports.protectRoute = (req,res,next)=>{
     if(!token){
 
         res.status(401).json({
-            message:"Token Could not be found"
+            message:"You are not authorized"
         })
     }
     else {

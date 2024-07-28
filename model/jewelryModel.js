@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 const {Schema} = mongoose
 
 const jewelrySchema = new Schema({
@@ -18,16 +18,27 @@ catergory:{
     type:String,
     require:true
 },
-img:{
+img:[{
     type:String,
     require:true
-},
+}],
 price:{
     type:Number,
     require:true
+},
+Quantity:{
+    type:Number,
+    require:true
+},
+bodyPart:{
+    type:String
+},
+featured:{
+    type:Boolean
 }
+
 
 })
 
 const jewelryModel = mongoose.model("jewelry",jewelrySchema);
-module.exports = jewelryModel;
+export default jewelryModel;

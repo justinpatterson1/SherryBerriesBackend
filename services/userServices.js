@@ -1,8 +1,9 @@
-const userModel = require("../model/userModel");
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken")
+import userModel from  "../model/userModel.js";
+import bcrypt from  "bcrypt";
+import jwt from "jsonwebtoken"; 
+import {query,matchedData,validationResult,body} from 'express-validator'
 
-exports.getAllUsers = (req,res) => {
+const getAllUsers = (req,res) => {
 
     userModel.find()
         .then((user)=>{
@@ -23,7 +24,7 @@ exports.getAllUsers = (req,res) => {
 } 
 
 
-exports.getAUser = (req,res) => {
+const getAUser = (req,res) => {
     userModel.findById(req.params.id)
         .then((user)=>{
             res.json({
@@ -39,49 +40,81 @@ exports.getAUser = (req,res) => {
         })
 }
 
-exports.createAuser = (req,res) => {
+const createAuser = (req,res) => {
+
+    const result =  validationResult(req)
+
+    if(result.errors.length!=0) return res.status(404).send({
+        error:result.errors
+    })
+
+    const data = matchedData(req)
+
+    userModel.findOne()
+    .where("email").equals(data.email)
+        .then(user=>{
+            if(!user){
+                const newUser = new userModel(data);
+
+                bcrypt.genSalt(10)
+                    .then((salt)=>{
+                        bcrypt.hash(newUser.password,salt)
+                            .then((hash)=>{
+                                newUser.password = hash
+            
+                                newUser.save()
+                                    .then((user)=>{
+                                        res.json({
+                                            message:'New user has been created',
+                                            data:user
+                                        })
+                                    })
+                                    .catch(err=>{
+                                        res.status(500).json({
+                                            message:"User was not created",
+                                            error:err
+                                        })
+                                    })
+                            })
+                            .catch(err =>{
+                                console.log(err)
+                            })
+                    })
+                    .catch(err => {
+                        console.log(err)
+                    })
+            } else {
+                res.json({
+                    message:`User with email ${data.email} already exists`
+                })
+            }
+        })
+        .catch(err=>{
+            res.status(400).json({
+                message:err
+            })
+        })
 
    
+   
     // const password = req.params.password
-    const newUser = new userModel(req.body);
-
-    bcrypt.genSalt(10)
-        .then((salt)=>{
-            bcrypt.hash(newUser.password,salt)
-                .then((hash)=>{
-                    newUser.password = hash
-
-                    newUser.save()
-                        .then((user)=>{
-                            res.json({
-                                message:'New user has been created',
-                                data:user
-                            })
-                        })
-                        .catch(err=>{
-                            res.status(500).json({
-                                message:"User was not created",
-                                error:err
-                            })
-                        })
-                })
-                .catch(err =>{
-                    console.log(err)
-                })
-        })
-        .catch(err => {
-            console.log(err)
-        })
+  
     
 }
 
-exports.updateAUser = (req,res) =>{
-    const update = req.params.body;
-    userModel.findByIdAndUpdate(req.params.id,update,{id:req.params.id})
+const updateAUser = async(req,res) =>{
+    const update = req.body
+    console.log(update)
+    try{
+
+        const hashedPassword = await bcrypt.hash(update.password,10)
+        update.password  = hashedPassword;
+        console.log(update)
+        userModel.findByIdAndUpdate(req.params.id,update,{new:true})
         .then((user)=>{
             res.json({
-                message:`ID:${req.params.id} has been updated`,
-                data:user
+                message:`ID:${hashedPassword} has been updated`,
+                data:true
             })
         })
         .catch(err => {
@@ -90,9 +123,62 @@ exports.updateAUser = (req,res) =>{
                 error:err
             })
         })
+
+    } catch(err) {
+        res.status(500).json({
+            message:err
+        })
+    }
+    // const update = req.body;
+    // const salt =  bcrypt.genSalt(10);
+    // const hash =  bcrypt.hash(update.password,salt);
+    // update.password =  hash;
+    // console.log(update)
+
+    // bcrypt.genSalt(10)
+    //     .then(salt =>{
+    //         bcrypt.hash(update.password.toString(),salt)
+    //         .then(hash=>{
+    //             update.password = hash;
+
+    //              userModel.findByIdAndUpdate(req.params.id,update,{new:true})
+    //                 .then((user)=>{
+    //                     res.json({
+    //                         message:`ID:${req.params.id} has been updated`,
+    //                         data:user
+    //                     })
+    //                 })
+    //                 .catch(err => {
+    //                     res.status(400).json({
+    //                         message:'Could not update user',
+    //                         error:err
+    //                     })
+    //                 })
+    //         })
+    //         .catch(err=>{
+    //             res.status(400).json({
+    //                 message:"Error while perfomring hash",
+    //                 err:err
+    //             })
+               
+    //         })
+    //     })
+        // userModel.findByIdAndUpdate(req.params.id,update,{new:true})
+    //     .then((user)=>{
+    //         res.json({
+    //             message:`ID:${req.params.id} has been updated`,
+    //             data:user
+    //         })
+    //     })
+    //     .catch(err => {
+    //         res.status(400).json({
+    //             message:'Could not update user',
+    //             error:err
+    //         })
+    //     })
 }
 
-exports.deleteAUser = (req,res) => {
+const deleteAUser = (req,res) => {
     userModel.findByIdAndDelete({_id:req.params.id})
     .then((user)=>{
         res.json({
@@ -110,12 +196,60 @@ exports.deleteAUser = (req,res) => {
     })
 }
 
-exports.loginUser = (req,res) =>{
+const getUserCart = (req,res) =>{
+    userModel.findById({_id:req.params.id},'cart')
+    .then((user)=>{
+        res.json({
+            message:`User ${req.params.id} cart is returned`,
+            data: user
+        })
+    })
+    .catch(err =>{
+        res.status(404).json({
+            message:"Error retreiving user cart",
+            error:err
+        })
+    })
+}
+
+const updateUserCart = (req,res) =>{
+    //const update = req.body
+    userModel.findById(req.params.id)
+    .then((user)=>{
+        
+         let update = [...user.cart]
+         let cartQuantity = update.cart.find((c)=>c._id ===req.params.cartid)
+        // console.log(cartQuantity)
+         //const cart = user.cart
+        // cart = cart.find(c=>c._id = req.params.cartid)
+
+        // cart.Quantity + 1
+
+        // res.json({
+        //     data:cart
+        // })
+
+        res.json({
+            message:"user found",
+            data:user
+        })
+       
+    })
+    .catch(err =>{
+        res.status(404).json({
+            message:"Error retreiving user cart",
+            error:err
+        })
+    })
+}
+
+
+const loginUser = (req,res) =>{
     userModel.findOne()
         .where("email").equals(req.body.email)
             .then(user=>{
 
-                console.log(user.password)
+                console.log(user)
                 bcrypt.compare(req.body.password,user.password)
                     .then((authorisedUser)=>{
                         console.log(authorisedUser)
@@ -156,3 +290,22 @@ exports.loginUser = (req,res) =>{
             })
 
 }
+
+const loginUpdate = (req,res)=>{
+    userModel.findById(req.params.id)
+    .then((user)=>{
+        bcrypt.compare(req.body.password,user.password)
+            .then(pass=>{
+                if(pass){
+                    res.json({
+                        message:true
+                    })
+                    
+                } else {
+                   res.json({message:false})
+                }
+            }).catch(err => console.log(err))
+    }).catch(err => console.log(err))
+}
+
+export {loginUpdate,loginUser,updateUserCart,getUserCart,deleteAUser,updateAUser,createAuser,getAUser,getAllUsers}

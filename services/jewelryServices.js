@@ -3,8 +3,9 @@ import { v4 as uuidv4 } from 'uuid';
 // const {v4} = uuid
 import multer from 'multer'
 import multerS3 from 'multer-s3'
-//import {s3Client} from "../libs/s3Client.js"
+import {s3Client} from "../libs/s3Client.js"
 import  {S3Client , PutObjectCommand} from  "@aws-sdk/client-s3";
+import {validationResult,matchedData} from 'express-validator'
 
 const getAllJewelry=(req,res)=>{
 
@@ -230,159 +231,48 @@ const getAllJewelry=(req,res)=>{
 //         })
 //     }
 
-jewelryModel.find({catergory:{$ne:'Waistbead'}})
-            .then((jewelry)=>{
-            res.json({
-                message:'All Jewelry has been returned',
-                data:jewelry
-            })
-        })
-        .catch(err => {
-            res.status(404).json({
-                message : `Cannot return jewelry`,
-                err : err
-            })
+// jewelryModel.find({catergory:{$ne:'Waistbead'}})
+//             .then((jewelry)=>{
+//             res.json({
+//                 message:'All Jewelry has been returned',
+//                 data:jewelry
+//             })
+//         })
+//         .catch(err => {
+//             res.status(404).json({
+//                 message : `Cannot return jewelry`,
+//                 err : err
+//             })
 
-        })
+//         })
 
-   
+   jewelryModel.find({})
+    .then((jewelry)=>{
+        res.json({
+            message:"All Jewelry have been returned",
+            data:jewelry
+        })
+    }).catch((err)=>{
+        res.status(400).json({
+            message:err
+        })
+    })
 }
 
+const createNewJewelry =(req,res) =>{
+    const result = validationResult(req)
 
-const getJewelryProducts = (req,res)=>{
-jewelryModel.find({$or:[{color:req.query.color},{size:req.query.size}]})
-        .skip((req.query.page-1)*16)
-        .limit(16)
-        .then((jewelry)=>{
-            res.json({
-                message:'All Jewelry has been returned',
-                data:jewelry
-            })
-        })
-        .catch(err => {
-            res.status(404).json({
-                message : `Cannot return jewelry`,
-                err : err
-            })
-
-        })
-
-   
-}
-
-const getJewelryColors = (req,res)=>{
-    jewelryModel.find().distinct('color')
-            .then((jewelry)=>{
-                res.json({
-                    message:'All Colors has been returned',
-                    data:jewelry
-                })
-            })
-            .catch(err => {
-                res.status(404).json({
-                    message : `Cannot return Colors`,
-                    err : err
-                })
-    
-            })
-    
-       
-    }
-
-
-    const getJewelrySize = (req,res)=>{
-        jewelryModel.find().distinct('size')
-                .then((jewelry)=>{
-                    res.json({
-                        message:'All Size has been returned',
-                        data:jewelry
-                    })
-                })
-                .catch(err => {
-                    res.status(404).json({
-                        message : `Cannot return Size`,
-                        err : err
-                    })
-        
-                })
-        
-           
-        }
-
-
-        const getJewelryCategory = (req,res)=>{
-            jewelryModel.find().distinct('catergory')
-                    .then((jewelry)=>{
-                        res.json({
-                            message:'All catergory has been returned',
-                            data:jewelry
-                        })
-                    })
-                    .catch(err => {
-                        res.status(404).json({
-                            message : `Cannot return catergory`,
-                            err : err
-                        })
-            
-                    })
-            
-               
-            }
-    
-
-const getAllFeaturedJewelry = (req,res)=>{
-    jewelryModel.find({featured:true})
-        .limit(req.query.limit)
-        .then((jewelry)=>{
-            res.json({
-                message:"Featured Jewelry returned",
-                lenght:jewelry.length,
-                data:jewelry
-            })
-        })
-        .catch(err =>{
-            res.status(400).json({
-                message:'Cannot return featured Jewelry',
-                err:err
-            })
-        })
-}
-
-const getAJewelry = (req,res) =>{
-    jewelryModel.findById(req.params.id)
-        .then((jewelry)=>{
-            res.json({
-                message:`Item of ID:${req.params.id} has been found`,
-                data:jewelry
-            })
-
-        })
-        .catch(err => {
-            res.status(404).json({
-                message : `ID:${req.params.id} could not be found`,
-                err : err
-            })
-
-        })
-
-
-
-}
-
-
-
-
-const addNewJewelry = (req,res) =>{
-
- const s3Client = new S3Client({
-        region: process.env.REGION ,
-        credentials:{
-           accessKeyId:process.env.AWSACCESSKEYID,
-           secretAccessKey:process.env.AWSSECRETACESSKEY
-        }
+    if(!result.isEmpty()) 
+        return res.status(400).json({
+            message:"Error occured when creating jewelry item ",
+            error:result.array()
     })
 
-    const newJewelryProduct = new jewelryModel(req.body)
+    const data = matchedData(req);
+
+    console.log(req)
+
+    const newJewelryProduct = new jewelryModel(data)
 
     newJewelryProduct.save()
     .then((jewelry)=>{
@@ -395,7 +285,7 @@ const addNewJewelry = (req,res) =>{
                 Body:req.files.img.data
         }
 
-      // console.log(fileName)
+       console.log(params)
 
       
         s3Client.send(new PutObjectCommand(params),(err,data)=>{
@@ -408,6 +298,8 @@ const addNewJewelry = (req,res) =>{
             console.log(params.Key)
 
                 newJewelryProduct.img = process.env.REPO+params.Key
+
+                console.log(newJewelryProduct)
                 newJewelryProduct.save()
                      .then((jewelry) => {
                         res.json({
@@ -419,8 +311,8 @@ const addNewJewelry = (req,res) =>{
                
 
         
-                });
-})
+                 });
+ })
             
             .catch(err =>{
                 res.status(500).json({
@@ -429,60 +321,5 @@ const addNewJewelry = (req,res) =>{
                 })
          })
         
-       
 }
-
-
-
-
-const deleteOneJewelry = (req,res) =>{
-    jewelryModel.findByIdAndDelete({_id:req.params.id})
-    .then((jewelry)=>{
-        res.json({
-            message:`${req.params.id} has been removed`,
-            data:jewelry,
-            length:jewelry.length
-        })
-    })
-    .catch(err => {
-        res.status(404).json({
-            message:`${req.params.id} was not able to be deleted`
-        })
-    })
-}
-
-const updateOneJewelry = (req,res) =>{
-    const update = req.body;
-    jewelryModel.findByIdAndUpdate(req.params.id,update,{new:true})
-        .then((jewelry)=>{
-            res.json({
-                message:`${req.params.id} has been updated`,
-                date:jewelry
-            })
-        })
-        .catch(err=>{
-            res.status(404).json({
-                message:`${req.params.id} was not updated`
-            })
-        })
-}
-
-
-const getAllWaistbeads = (req,res) =>{
-    jewelryModel.find({catergory:'Waistbead'})
-    .then((jewelry)=>{
-        res.json({
-            message:'All waistbeads have been returned',
-            data:jewelry,
-            length:jewelry.length
-        })
-       
-    })
-    .catch((err)=>{
-        res.status(404).json({
-            message:err
-        })
-    })
-}
-
-export {getAllWaistbeads,updateOneJewelry,deleteOneJewelry,addNewJewelry,getAJewelry,getAllFeaturedJewelry,getJewelryCategory,getAllJewelry,getJewelryProducts,getJewelryColors,getJewelrySize}
+export{getAllJewelry,createNewJewelry}

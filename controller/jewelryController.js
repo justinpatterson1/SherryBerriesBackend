@@ -1,6 +1,9 @@
 import express from 'express';
 const router = express.Router()
-import {updateOneJewelry,deleteOneJewelry,getAJewelry,getAllFeaturedJewelry,getJewelryCategory,getAllJewelry,getJewelryProducts,getJewelryColors,getJewelrySize,addNewJewelry, getAllWaistbeads} from '../services/jewelryServices.js';
+import { validateJewelry } from '../validators/JewelryValidation.js';
+import {checkSchema} from 'express-validator'
+import {getAllJewelry,createNewJewelry} from '../services/jewelryServices.js'
+//import {updateOneJewelry,deleteOneJewelry,getAJewelry,getAllFeaturedJewelry,getJewelryCategory,getAllJewelry,getJewelryProducts,getJewelryColors,getJewelrySize,addNewJewelry, getAllWaistbeads} from '../services/jewelryServices.js';
 // const {protectRoute} = require('../middleware/protectedRoute.js');
 // const multer = require('multer')
 // const multerS3 = require('multer-s3')
@@ -33,14 +36,14 @@ import {updateOneJewelry,deleteOneJewelry,getAJewelry,getAllFeaturedJewelry,getJ
 //   })
 
 router.get("/",getAllJewelry);
-router.get("/featured",getAllFeaturedJewelry);
-router.get("/waistbead",getAllWaistbeads)
-router.get("/products",getJewelryProducts);
-router.post("/",addNewJewelry);
-router.get("/:id",getAJewelry);
+// router.get("/featured",getAllFeaturedJewelry);
+// router.get("/waistbead",getAllWaistbeads)
+// router.get("/products",getJewelryProducts);
+router.post("/",checkSchema(validateJewelry),createNewJewelry);
+// router.get("/:id",getAJewelry);
 
-router.delete("/:id",deleteOneJewelry);
-router.put("/:id",updateOneJewelry);
+// router.delete("/:id",deleteOneJewelry);
+// router.put("/:id",updateOneJewelry);
 
 
 export default router;
